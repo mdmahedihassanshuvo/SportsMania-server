@@ -29,12 +29,12 @@ async function run() {
 
         const popularClassesCollection = client.db("sportsmania").collection("popularclasses");
 
-        // app.post('/jwt', (req, res) => {
-        //     const user = req.body
-        //     const token = jwt.sign(user, process.env.SECREAT_TOKEN, { expiresIn: '1h' });
-        //     const result = { token }
-        //     res.send(result)
-        // })
+        app.post('/jwt', (req, res) => {
+            const user = req.body
+            const token = jwt.sign(user, process.env.SECREAT_TOKEN, { expiresIn: '1h' });
+            const result = { token }
+            res.send(result)
+        })
 
         app.get('/popularclasses', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
