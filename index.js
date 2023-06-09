@@ -121,11 +121,11 @@ async function run() {
             res.send(result);
         });
 
-        // app.post('/addedClasses', async (req, res) => {
-        //     const addClass = req.body;
-        //     const result = await addedClassesCollection.insertOne(addClass);
-        //     res.send(result);
-        // })
+        app.post('/addedClasses', async (req, res) => {
+            const addClass = req.body;
+            const result = await addedClassesCollection.insertOne(addClass);
+            res.send(result);
+        })
 
         app.get('/classes', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
