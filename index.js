@@ -8,6 +8,21 @@ const port = process.env.PORT || 5000
 app.use(express.json())
 app.use(cors())
 
+const verifyJwt = (req, res, next) => {
+    const authorization = req.headers.authorization;
+    if (!authorization) {
+        return res.status(401).send({ error: true, message: 'Unauthorized access' });
+    }
+
+    const token = authorization.split(' ')[1]
+    jwt.verify(token, process.env.SECREAT_TOKEN, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ error: true, message: 'Unauthorized access' })
+        }
+        req.decoded = decoded
+        next();
+    });
+}
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@classes.s7axley.mongodb.net/?retryWrites=true&w=majority`;
@@ -49,7 +64,16 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', async (req, res) => {
+        app.get('/users', verifyJwt, async (req, res) => {
+            const email = req.query.email;
+            if (!email) {
+                res.send([])
+            }
+            const decodedEmail = req.decoded.email;
+            if (email !== decodedEmail) {
+                return res.status(401).send({ error: true, message: 'forbidden access' })
+            }
+            // const query = { email: email }
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
