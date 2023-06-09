@@ -53,6 +53,16 @@ async function run() {
             res.send(result)
         })
 
+        const verifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await usersCollection.findOne(query)
+            if (user?.role !== 'admin') {
+                return res.status(403).send({ error: true, message: 'forbidden access' })
+            }
+            next();
+        }
+
         app.post('/users', async (req, res) => {
             const user = req.body
             const query = { email: user.email }
@@ -64,26 +74,34 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', verifyJwt, async (req, res) => {
-            const email = req.query.email;
-            if (!email) {
-                res.send([])
-            }
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(401).send({ error: true, message: 'forbidden access' })
-            }
-            // const query = { email: email }
+        app.get('/users', verifyJwt, verifyAdmin, async (req, res) => {
             const result = await usersCollection.find().toArray();
             res.send(result);
         })
+
+        app.get('/users/admin/:email', verifyJwt, async (req, res) => {
+            try {
+                const email = req.params.email;
+                if (req.decoded.email !== email) {
+                    return res.send({ admin: false });
+                }
+                const query = { email: email };
+                const user = await usersCollection.findOne(query);
+                const result = { admin: user?.role === 'admin' };
+                res.send(result);
+            } catch (error) {
+                console.log(error);
+                res.status(500).send('Internal Server Error');
+            }
+        });
+
 
         app.patch('/users/admin/:id', async (req, res) => {
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
             const updateDoc = {
                 $set: {
-                    roll: 'admin'
+                    role: 'admin'
                 },
             };
             const result = await usersCollection.updateOne(filter, updateDoc);
