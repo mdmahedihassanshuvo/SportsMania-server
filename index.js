@@ -132,10 +132,10 @@ async function run() {
             res.send(result);
         })
 
-        // app.get('/addedClasses', async (req, res) => {
-        //     const result = await addedClassesCollection.find().toArray();
-        //     res.send(result);
-        // });
+        app.get('/addedClasses', async (req, res) => {
+            const result = await addedClassesCollection.find().toArray();
+            res.send(result);
+        });
 
         app.get('/popularinstructors', async (req, res) => {
             const result = await popularInstructorsCollection.find().toArray();
