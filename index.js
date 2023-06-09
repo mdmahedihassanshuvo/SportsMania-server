@@ -44,6 +44,7 @@ async function run() {
 
         const popularClassesCollection = client.db("sportsmania").collection("popularclasses");
         const popularInstructorsCollection = client.db("sportsmania").collection("popularinstructors");
+        const addedClassesCollection = client.db("sportsmania").collection("classes");
         const usersCollection = client.db("sportsmania").collection("users");
 
         app.post('/jwt', (req, res) => {
@@ -108,10 +109,33 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/popularclasses', async (req, res) => {
+        app.patch('/users/admin', async (req, res) => {
+            const email = req.body.email;
+            const query = { email: email };
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                },
+            };
+            const result = await usersCollection.updateOne(query, updateDoc);
+            res.send(result);
+        });
+
+        // app.post('/addedClasses', async (req, res) => {
+        //     const addClass = req.body;
+        //     const result = await addedClassesCollection.insertOne(addClass);
+        //     res.send(result);
+        // })
+
+        app.get('/classes', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
             res.send(result);
         })
+
+        // app.get('/addedClasses', async (req, res) => {
+        //     const result = await addedClassesCollection.find().toArray();
+        //     res.send(result);
+        // });
 
         app.get('/popularinstructors', async (req, res) => {
             const result = await popularInstructorsCollection.find().toArray();
