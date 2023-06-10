@@ -75,9 +75,19 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', verifyJwt, verifyAdmin, async (req, res) => {
-            const result = await usersCollection.find().toArray();
-            res.send(result);
+        app.get('/users', verifyJwt, async (req, res) => {
+            const role = req.query.role;
+            console.log(role);
+            if (!role) {
+                const result = await usersCollection.find().toArray();
+                res.send(result);
+            } else {
+                const query = { role: role };
+                const result = await usersCollection.find(query).toArray();
+                res.send(result);
+            }
+            // const result = await usersCollection.find().toArray();
+            // res.send(result);
         })
 
         app.get('/users/admin/:email', verifyJwt, async (req, res) => {
@@ -128,8 +138,16 @@ async function run() {
         })
 
         app.get('/addedClasses', async (req, res) => {
-            const result = await addedClassesCollection.find().toArray();
-            res.send(result);
+            const status = req.query.status;
+            console.log(status);
+            if (!status) {
+                const result = await addedClassesCollection.find().toArray();
+                res.send(result);
+            } else {
+                const query = { status: status };
+                const result = await addedClassesCollection.find(query).toArray();
+                res.send(result);
+            }
         });
 
         app.patch('/addedClasses/:id', async (req, res) => {
