@@ -148,21 +148,21 @@ async function run() {
             res.send(result);
         });
 
-        // app.put('/addedClasses/:id', async (req, res) => {
-        //     const feedBack = req.body.feedBack
-        //     console.log(feedBack)
-        //     const id = req.params.id;
-        //     const filter = { _id: new ObjectId(id) };
+        app.put('/addedClasses/:id', async (req, res) => {
+            const feedBack = req.body.feedBack
+            console.log(feedBack)
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
 
-        //     const updateDoc = {
-        //         $set: {
-        //             feedBack: feedBack,
-        //         },
-        //     };
+            const updateDoc = {
+                $set: {
+                    feedBack: feedBack,
+                },
+            };
 
-        //     const result = await addedClassesCollection.updateOne(filter, updateDoc);
-        //     res.send(result);
-        // });
+            const result = await addedClassesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
 
         app.get('/classes', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
