@@ -127,15 +127,47 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/classes', async (req, res) => {
-            const result = await popularClassesCollection.find().toArray();
-            res.send(result);
-        })
-
         app.get('/addedClasses', async (req, res) => {
             const result = await addedClassesCollection.find().toArray();
             res.send(result);
         });
+
+        app.patch('/addedClasses/:id', async (req, res) => {
+            const status = req.body.status
+            console.log(status)
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+
+            const updateDoc = {
+                $set: {
+                    status: status,
+                },
+            };
+
+            const result = await addedClassesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        });
+
+        // app.put('/addedClasses/:id', async (req, res) => {
+        //     const feedBack = req.body.feedBack
+        //     console.log(feedBack)
+        //     const id = req.params.id;
+        //     const filter = { _id: new ObjectId(id) };
+
+        //     const updateDoc = {
+        //         $set: {
+        //             feedBack: feedBack,
+        //         },
+        //     };
+
+        //     const result = await addedClassesCollection.updateOne(filter, updateDoc);
+        //     res.send(result);
+        // });
+
+        app.get('/classes', async (req, res) => {
+            const result = await popularClassesCollection.find().toArray();
+            res.send(result);
+        })
 
         app.get('/popularinstructors', async (req, res) => {
             const result = await popularInstructorsCollection.find().toArray();
