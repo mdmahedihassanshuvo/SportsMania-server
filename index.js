@@ -3,6 +3,7 @@ const app = express()
 const cors = require('cors')
 require('dotenv').config()
 var jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.SECREATE_KEY)
 const port = process.env.PORT || 5000
 
 app.use(express.json())
@@ -46,6 +47,7 @@ async function run() {
         const popularInstructorsCollection = client.db("sportsmania").collection("popularinstructors");
         const addedClassesCollection = client.db("sportsmania").collection("classes");
         const usersCollection = client.db("sportsmania").collection("users");
+        const selectedClassesCollection = client.db("sportsmania").collection("selectedClasses");
 
         app.post('/jwt', (req, res) => {
             const user = req.body
@@ -75,9 +77,9 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', verifyJwt, async (req, res) => {
+        app.get('/users', async (req, res) => {
             const role = req.query.role;
-            console.log(role);
+            // console.log(role);
             if (!role) {
                 const result = await usersCollection.find().toArray();
                 res.send(result);
@@ -108,7 +110,7 @@ async function run() {
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email
-            console.log(email);
+            // console.log(email);
             const query = { email: email }
             const user = await usersCollection.findOne(query)
             const result = { instructor: user?.role === 'instructor' }
@@ -148,20 +150,31 @@ async function run() {
 
         app.get('/addedClasses', async (req, res) => {
             const status = req.query.status;
-            console.log(status);
-            if (!status) {
+            const email = req.query.email;
+            // console.log(email);
+
+            if (!status && !email) {
                 const result = await addedClassesCollection.find().toArray();
                 res.send(result);
-            } else {
+            } else if (status && !email) {
                 const query = { status: status };
+                const result = await addedClassesCollection.find(query).toArray();
+                res.send(result);
+            } else if (!status && email) {
+                const query = { email: email };
+                const result = await addedClassesCollection.find(query).toArray();
+                res.send(result);
+            } else {
+                const query = { status: status, email: email };
                 const result = await addedClassesCollection.find(query).toArray();
                 res.send(result);
             }
         });
 
+
         app.patch('/addedClasses/:id', async (req, res) => {
             const status = req.body.status
-            console.log(status)
+            // console.log(status)
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
 
@@ -177,7 +190,7 @@ async function run() {
 
         app.put('/addedClasses/:id', async (req, res) => {
             const feedBack = req.body.feedBack
-            console.log(feedBack)
+            // console.log(feedBack)
             const id = req.params.id;
             const filter = { _id: new ObjectId(id) };
 
@@ -191,6 +204,19 @@ async function run() {
             res.send(result);
         });
 
+        app.post('/selectClasses/:email', async (req, res) => {
+            const selectedClasses = req.body;
+            const result = await selectedClassesCollection.insertOne(selectedClasses);
+            res.send(result);
+        })
+
+        app.get('/selectClasses/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { email: email }
+            const result = await selectedClassesCollection.find(query).toArray();
+            res.send(result);
+        })
+
         app.get('/classes', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
             res.send(result);
@@ -199,6 +225,20 @@ async function run() {
         app.get('/popularinstructors', async (req, res) => {
             const result = await popularInstructorsCollection.find().toArray();
             res.send(result);
+        })
+
+        app.post('/create-payment-intent', verifyJwt, async (req, res) => {
+            const {price} = req.body;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
         })
 
         await client.db("admin").command({ ping: 1 });
