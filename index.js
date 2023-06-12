@@ -48,6 +48,7 @@ async function run() {
         const addedClassesCollection = client.db("sportsmania").collection("classes");
         const usersCollection = client.db("sportsmania").collection("users");
         const selectedClassesCollection = client.db("sportsmania").collection("selectedClasses");
+        const paymentsCollection = client.db("sportsmania").collection("payments");
 
         app.post('/jwt', (req, res) => {
             const user = req.body
@@ -171,6 +172,40 @@ async function run() {
             }
         });
 
+        app.patch('/addedClasses', async (req, res) => {
+            const id = req.query.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+
+            try {
+                const classItem = await addedClassesCollection.findOne(filter);
+                if (!classItem) {
+                    return res.status(404).json({ error: 'Class not found' });
+                }
+
+                let availableSeats = parseInt(classItem.available_seats);
+
+                if (isNaN(availableSeats)) {
+                    return res.status(500).json({ error: 'Invalid available_seats value' });
+                }
+
+                availableSeats--;
+
+                const updateDoc = {
+                    $set: { available_seats: availableSeats.toString() }
+                };
+
+                const result = await addedClassesCollection.updateOne(filter, updateDoc);
+
+                if (result.modifiedCount === 0) {
+                    return res.status(500).json({ error: 'Failed to update class' });
+                }
+
+                res.sendStatus(200);
+            } catch (error) {
+                res.status(500).json({ error: error.message });
+            }
+        });
 
         app.patch('/addedClasses/:id', async (req, res) => {
             const status = req.body.status
@@ -210,12 +245,34 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/selectClasses/:email', async (req, res) => {
-            const email = req.params.email
-            const query = { email: email }
-            const result = await selectedClassesCollection.find(query).toArray();
-            res.send(result);
-        })
+        // app.get('/selectClasses/:email', async (req, res) => {
+        //     const email = req.params.email
+        //     const query = { email: email }
+        //     const result = await selectedClassesCollection.find(query).toArray();
+        //     res.send(result);
+        // })
+
+        app.get('/selectClasses', async (req, res) => {
+            const id = req.query.id;
+            const email = req.query.email;
+            // console.log(email)
+
+            if (id) {
+                const query = { _id: new ObjectId(id) }
+                const result = await selectedClassesCollection.find(query).toArray();
+                res.send(result);
+            }
+
+            else if (email) {
+                query = { email: email }
+                const result = await selectedClassesCollection.find(query).toArray();
+                res.send(result);
+            }
+
+
+
+        });
+
 
         app.get('/classes', async (req, res) => {
             const result = await popularClassesCollection.find().toArray();
@@ -228,7 +285,7 @@ async function run() {
         })
 
         app.post('/create-payment-intent', verifyJwt, async (req, res) => {
-            const {price} = req.body;
+            const { price } = req.body;
             const amount = price * 100;
             const paymentIntent = await stripe.paymentIntents.create({
                 amount: amount,
@@ -239,6 +296,24 @@ async function run() {
             res.send({
                 clientSecret: paymentIntent.client_secret,
             });
+        })
+
+        app.post('/payments', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+
+            const query = { _id: new ObjectId(payment.classItemId) }
+            // console.log(query)
+            const deletedItem = await selectedClassesCollection.deleteOne(query);
+
+            res.send({ result, deletedItem })
+        })
+
+        app.get('/payments/:email', async (req, res) => {
+            const email = req.params.email
+            const query = {email : email}
+            const result = await paymentsCollection.find(query).toArray();
+            res.send(result)
         })
 
         await client.db("admin").command({ ping: 1 });
